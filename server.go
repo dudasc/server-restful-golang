@@ -43,87 +43,90 @@ func getById(c *gin.Context) {
 
 func getAll(c *gin.Context){
 	var (
-			contact Contact
-			contacts []Contact
-		)
-		rows, err := db.Query("select id, Name, Fone from contact;")
+		contact Contact
+		contacts []Contact
+	)
+	rows, err := db.Query("select id, Name, Fone from contact;")
+	if err != nil {
+		fmt.Print(err.Error())
+	}
+	for rows.Next() {
+		err = rows.Scan(&contact.Id, &contact.Name, &contact.Fone)
+		contacts = append(contacts, contact)
 		if err != nil {
 			fmt.Print(err.Error())
 		}
-		for rows.Next() {
-			err = rows.Scan(&contact.Id, &contact.Name, &contact.Fone)
-			contacts = append(contacts, contact)
-			if err != nil {
-				fmt.Print(err.Error())
-			}
-		}
-		defer rows.Close()
-		c.JSON(http.StatusOK, gin.H)
+	}
+	defer rows.Close()
+	c.JSON(http.StatusOK, gin.H{
+		"result": contacts,
+		"count":  len(contacts),
+	})
 }
 
 func add(c *gin.Context) {
-		var buffer bytes.Buffer
-		Name := c.PostForm("Name")
-		Fone := c.PostForm("Fone")
-		stmt, err := db.Prepare("insert into contact (Name, Fone) values(?,?);")
-		if err != nil {
-			fmt.Print(err.Error())
-		}
-		_, err = stmt.Exec(Name, Fone)
+	var buffer bytes.Buffer
+	Name := c.PostForm("Name")
+	Fone := c.PostForm("Fone")
+	stmt, err := db.Prepare("insert into contact (Name, Fone) values(?,?);")
+	if err != nil {
+		fmt.Print(err.Error())
+	}
+	_, err = stmt.Exec(Name, Fone)
 
-		if err != nil {
-			fmt.Print(err.Error())
-		}
+	if err != nil {
+		fmt.Print(err.Error())
+	}
 
-		// Fastest way to append strings
-		buffer.WriteString(Name)
-		buffer.WriteString(" ")
-		buffer.WriteString(Fone)
-		defer stmt.Close()
-		name := buffer.String()
-		c.JSON(http.StatusOK, gin.H{
-			"message": fmt.Sprintf(" %s successfully created", name),
-		})
+	// Fastest way to append strings
+	buffer.WriteString(Name)
+	buffer.WriteString(" ")
+	buffer.WriteString(Fone)
+	defer stmt.Close()
+	name := buffer.String()
+	c.JSON(http.StatusOK, gin.H{
+		"message": fmt.Sprintf(" %s successfully created", name),
+	})
 }
 
 func update(c *gin.Context) {
-		var buffer bytes.Buffer
-		id := c.Query("id")
-		Name := c.PostForm("Name")
-		Fone := c.PostForm("Fone")
-		stmt, err := db.Prepare("update contact set Name= ?, Fone= ? where id= ?;")
-		if err != nil {
-			fmt.Print(err.Error())
-		}
-		_, err = stmt.Exec(Name, Fone, id)
-		if err != nil {
-			fmt.Print(err.Error())
-		}
+	var buffer bytes.Buffer
+	id := c.Query("id")
+	Name := c.PostForm("Name")
+	Fone := c.PostForm("Fone")
+	stmt, err := db.Prepare("update contact set Name= ?, Fone= ? where id= ?;")
+	if err != nil {
+		fmt.Print(err.Error())
+	}
+	_, err = stmt.Exec(Name, Fone, id)
+	if err != nil {
+		fmt.Print(err.Error())
+	}
 
-		// Fastest way to append strings
-		buffer.WriteString(Name)
-		buffer.WriteString(" ")
-		buffer.WriteString(Fone)
-		defer stmt.Close()
-		name := buffer.String()
-		c.JSON(http.StatusOK, gin.H{
-			"message": fmt.Sprintf("Successfully updated to %s", name),
-		})
+	// Fastest way to append strings
+	buffer.WriteString(Name)
+	buffer.WriteString(" ")
+	buffer.WriteString(Fone)
+	defer stmt.Close()
+	name := buffer.String()
+	c.JSON(http.StatusOK, gin.H{
+		"message": fmt.Sprintf("Successfully updated to %s", name),
+	})
 }
 
 func delete(c *gin.Context) {
-		id := c.Query("id")
-		stmt, err := db.Prepare("delete from contact where id= ?;")
-		if err != nil {
-			fmt.Print(err.Error())
-		}
-		_, err = stmt.Exec(id)
-		if err != nil {
-			fmt.Print(err.Error())
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"message": fmt.Sprintf("Successfully deleted: %s", id),
-		})
+	id := c.Query("id")
+	stmt, err := db.Prepare("delete from contact where id= ?;")
+	if err != nil {
+		fmt.Print(err.Error())
+	}
+	_, err = stmt.Exec(id)
+	if err != nil {
+		fmt.Print(err.Error())
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": fmt.Sprintf("Successfully deleted: %s", id),
+	})
 }
 
 //Criação da tabela de contato
@@ -142,8 +145,6 @@ func createTable(c *gin.Context){
 
 
 func main() {
-
-	
 	if err != nil {
 		fmt.Print(err.Error())
 	}
