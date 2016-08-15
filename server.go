@@ -5,13 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 )
 
 type Contact struct {
-	Id 		int
+	Id 	int
 	Name 	string
 	Fone  	string
 }
@@ -27,7 +26,6 @@ func getById(c *gin.Context) {
 	row := db.QueryRow("select id, Name, Fone from contact where id = ?;", id)
 	err = row.Scan(&contact.Id, &contact.Name, &contact.Fone)
 	if err != nil {
-		// If no results send null
 		result = gin.H{
 			"result": nil,
 			"count":  0,
@@ -78,7 +76,6 @@ func add(c *gin.Context) {
 		fmt.Print(err.Error())
 	}
 
-	// Fastest way to append strings
 	buffer.WriteString(Name)
 	buffer.WriteString(" ")
 	buffer.WriteString(Fone)
@@ -91,7 +88,8 @@ func add(c *gin.Context) {
 
 func update(c *gin.Context) {
 	var buffer bytes.Buffer
-	id := c.Query("id")
+	//id := c.Query("id")
+	id := c.Param("id")
 	Name := c.PostForm("Name")
 	Fone := c.PostForm("Fone")
 	stmt, err := db.Prepare("update contact set Name= ?, Fone= ? where id= ?;")
@@ -103,7 +101,6 @@ func update(c *gin.Context) {
 		fmt.Print(err.Error())
 	}
 
-	// Fastest way to append strings
 	buffer.WriteString(Name)
 	buffer.WriteString(" ")
 	buffer.WriteString(Fone)
@@ -115,7 +112,8 @@ func update(c *gin.Context) {
 }
 
 func delete(c *gin.Context) {
-	id := c.Query("id")
+	//id := c.Query("id")
+	id := c.Param("id")
 	stmt, err := db.Prepare("delete from contact where id= ?;")
 	if err != nil {
 		fmt.Print(err.Error())
@@ -149,7 +147,7 @@ func main() {
 		fmt.Print(err.Error())
 	}
 	defer db.Close()
-	// make sure connection is available
+	
 	err = db.Ping()
 	if err != nil {
 		fmt.Print(err.Error())
@@ -159,7 +157,7 @@ func main() {
 	router.GET("/contact/:id", getById)
 	router.GET("/contacts", getAll)
 	router.POST("/contact", add)
-	router.PUT("/contact", update)
-	router.DELETE("/contact", delete)
+	router.PUT("/contact/:id", update)
+	router.DELETE("/contact/:id", delete)
 	router.Run(":8000")
 }
