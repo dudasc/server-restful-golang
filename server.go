@@ -88,11 +88,11 @@ func add(c *gin.Context) {
 
 func update(c *gin.Context) {
 	var buffer bytes.Buffer
-	//id := c.Query("id")
 	id := c.Param("id")
 	Name := c.PostForm("Name")
 	Fone := c.PostForm("Fone")
-	stmt, err := db.Prepare("update contact set Name= ?, Fone= ? where id= ?;")
+	stmt, err := db.Prepare("update contact set Name= ?, Fone= ? 
+						where id= ?;")
 	if err != nil {
 		fmt.Print(err.Error())
 	}
@@ -112,7 +112,6 @@ func update(c *gin.Context) {
 }
 
 func delete(c *gin.Context) {
-	//id := c.Query("id")
 	id := c.Param("id")
 	stmt, err := db.Prepare("delete from contact where id= ?;")
 	if err != nil {
