@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bytes"
+	"time"
 	"database/sql"
 	"fmt"
 	"net/http"
@@ -9,8 +9,12 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+func delaySecond(n time.Duration) {
+	time.Sleep(n * time.Second)
+}
+
 type Contact struct {
-	Id 	int
+	Id 		int
 	Name 	string
 	Fone  	string
 }
@@ -18,25 +22,17 @@ type Contact struct {
 var db, err = sql.Open("mysql", "root@tcp(127.0.0.1:3306)/db-contacts")
 
 func getById(c *gin.Context) {
-	var (
-		contact Contact
-		result gin.H
-	)
+	var contact Contact
+
 	id := c.Param("id")
 	row := db.QueryRow("select id, Name, Fone from contact where id = ?;", id)
+	
 	err = row.Scan(&contact.Id, &contact.Name, &contact.Fone)
 	if err != nil {
-		result = gin.H{
-			"result": nil,
-			"count":  0,
-		}
+		c.JSON(http.StatusOK, nil)
 	} else {
-		result = gin.H{
-			"result": contact,
-			"count":  1,
-		}
-	}
-	c.JSON(http.StatusOK, result)
+		c.JSON(http.StatusOK, contact)
+	}	
 }
 
 func getAll(c *gin.Context){
@@ -44,70 +40,60 @@ func getAll(c *gin.Context){
 		contact Contact
 		contacts []Contact
 	)
-	rows, err := db.Query("select id, Name, Fone from contact;")
+
+	rows, err := db.Query("select id, name, fone from contact;")
 	if err != nil {
 		fmt.Print(err.Error())
 	}
 	for rows.Next() {
-		err = rows.Scan(&contact.Id, &contact.Name, &contact.Fone)
-		contacts = append(contacts, contact)
-		if err != nil {
-			fmt.Print(err.Error())
-		}
+		rows.Scan(&contact.Id, &contact.Name, &contact.Fone)
+		contacts = append(contacts, contact)		
 	}
 	defer rows.Close()
-	c.JSON(http.StatusOK, gin.H{
-		"result": contacts,
-		"count":  len(contacts),
-	})
+
+	c.JSON(http.StatusOK, contacts)
 }
 
 func add(c *gin.Context) {
-	var buffer bytes.Buffer
-	Name := c.PostForm("Name")
-	Fone := c.PostForm("Fone")
+	Name := c.PostForm("name")
+	Fone := c.PostForm("fone")
+
 	stmt, err := db.Prepare("insert into contact (Name, Fone) values(?,?);")
 	if err != nil {
 		fmt.Print(err.Error())
 	}
-	_, err = stmt.Exec(Name, Fone)
 
+	_, err = stmt.Exec(Name, Fone)
 	if err != nil {
 		fmt.Print(err.Error())
 	}
 
-	buffer.WriteString(Name)
-	buffer.WriteString(" ")
-	buffer.WriteString(Fone)
 	defer stmt.Close()
-	name := buffer.String()
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf(" %s successfully created", name),
+		"message": fmt.Sprintf("successfully created"),
 	})
 }
 
 func update(c *gin.Context) {
-	var buffer bytes.Buffer
-	id := c.Param("id")
-	Name := c.PostForm("Name")
-	Fone := c.PostForm("Fone")
-	stmt, err := db.Prepare("update contact set Name= ?, Fone= ? 
-						where id= ?;")
-	if err != nil {
-		fmt.Print(err.Error())
-	}
-	_, err = stmt.Exec(Name, Fone, id)
+	Id := c.Param("id")
+	Name := c.PostForm("name")
+	Fone := c.PostForm("fone")
+
+	stmt, err := db.Prepare("update contact set Name= ?, Fone= ? where Id= ?;")
 	if err != nil {
 		fmt.Print(err.Error())
 	}
 
-	buffer.WriteString(Name)
-	buffer.WriteString(" ")
-	buffer.WriteString(Fone)
+	_, err = stmt.Exec(Name, Fone, Id)
+	if err != nil {
+		fmt.Print(err.Error())
+	}
+
 	defer stmt.Close()
-	name := buffer.String()
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf("Successfully updated to %s", name),
+		"message": fmt.Sprintf("Successfully updated"),
 	})
 }
 
@@ -121,6 +107,7 @@ func delete(c *gin.Context) {
 	if err != nil {
 		fmt.Print(err.Error())
 	}
+	
 	c.JSON(http.StatusOK, gin.H{
 		"message": fmt.Sprintf("Successfully deleted: %s", id),
 	})
@@ -153,10 +140,10 @@ func main() {
 	}
 	
 	router := gin.Default()
-	router.GET("/contact/:id", getById)
-	router.GET("/contacts", getAll)
-	router.POST("/contact", add)
-	router.PUT("/contact/:id", update)
-	router.DELETE("/contact/:id", delete)
+	router.GET("/api/contact/:id", getById)
+	router.GET("/api/contacts", getAll)
+	router.POST("/api/contact", add)
+	router.PUT("/api/contact/:id", update)
+	router.DELETE("/api/contact/:id", delete)
 	router.Run(":8000")
 }
