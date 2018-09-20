@@ -1,3 +1,10 @@
+/*
+Instalar linguagem GO
+Download pacotes via CMD
+go get github.com/gin-gonic/gin
+go get github.com/go-sql-driver/mysql
+*/
+
 package main
 
 import (
